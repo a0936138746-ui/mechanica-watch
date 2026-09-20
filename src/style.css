@@ -45,3 +45,31 @@
 .explosion-scrub output{min-width:32px}
 .controls>#part-labels{padding:8px 12px;background:transparent;border:1px solid #71857d66;color:#bacac1;font:10px Arial;letter-spacing:.06em;margin:4px 0}
 @media(max-width:760px){.exploded-view .intro{display:none}.exploded-view .viewer{height:480px}.explosion-scrub input{max-width:180px}}
+/* UX polish: presentation hierarchy only; the frozen 3D stage is retained. */
+.viewer-top{align-items:center;pointer-events:auto;z-index:6}
+#show-help{padding:7px 9px;font-size:10px;color:var(--gold)}
+#interaction-help{position:absolute;left:4.5%;bottom:115px;width:330px;max-width:90%;z-index:7;background:#0c181af5;border:1px solid #768c8077;padding:15px 18px;box-shadow:0 8px 30px #0005}
+#interaction-help strong{font-size:13px;color:var(--gold)}
+#interaction-help p{font-size:11px;line-height:1.9;margin:9px 0 0;color:#cad6d0}
+#interaction-help button{float:right;font-size:20px;border:0;margin:-8px -8px 0 5px;padding:5px 10px}
+#explore-hint{position:absolute;top:65px;left:50%;transform:translateX(-50%);max-width:90%;width:max-content;padding:10px 15px;background:#0c181aed;border:1px solid #78968a66;color:#d3dcd3;z-index:5;font-size:11px;pointer-events:none;text-align:center}
+.viewer-actions{z-index:6;flex-wrap:wrap}
+.viewer-actions #part-labels{font-size:10px;padding:0 12px}
+.viewer-actions #assemble.primary{color:#111a18;border-color:var(--gold)}
+#return-part{display:block;width:100%;min-height:44px;background:#c4ad7b;color:#111a18;border-color:#c4ad7b;margin-bottom:12px;font-weight:bold;position:sticky;top:0;z-index:1}
+#part-card #detail-title{font-family:Arial,'Microsoft JhengHei',sans-serif;font-size:21px;margin-bottom:2px}
+#part-card #detail-name-en{margin-top:0;color:var(--gold);font-size:12px}
+#detail-more{margin:12px 0;font-size:11px;color:var(--muted)}
+#detail-more summary{cursor:pointer;padding:8px 0;color:var(--gold)}
+#detail-more summary:focus-visible{outline:2px solid var(--teal)}
+@media(max-width:760px){
+ .viewer-top{gap:8px}.viewer-top>span{font-size:7px;letter-spacing:1px}
+ #interaction-help{bottom:110px;left:5%;padding:12px 14px;width:90%}
+ #explore-hint{top:55px;font-size:10px;max-width:86%}
+ .viewer-actions{gap:6px;bottom:36px}
+ .viewer-actions #part-labels{flex-basis:100%;max-width:none;min-height:34px}
+ .exploded-view .viewer-actions{bottom:34px}
+ .part-detail #part-card{max-height:310px}
+ .part-detail #viewer{margin-bottom:320px}
+ #part-card #detail-title{font-size:18px}
+}

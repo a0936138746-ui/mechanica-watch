@@ -2,6 +2,7 @@ import * as T from 'three';
 import {OrbitControls} from '../vendor/OrbitControls.js';
 import {RoomEnvironment} from '../vendor/RoomEnvironment.js';
 import {enrichMetadata} from './metadata.js';
+import {createPresentation} from './ux.js';
 import {createLabels} from './labels.js';
 import {createExplorer} from './explorer.js';
 import {fitBox} from './framing.js';
@@ -76,6 +77,7 @@ canvas.addEventListener('webglcontextrestored',()=>{contextLost=false;last=perfo
 explorer=createExplorer({getCameraMode:()=>cameraOwner,restoreCameraMode:mode=>{cameraOwner=mode;fitEnabled=false;fitRemaining=0;},parts,camera,controls,canvas,sim,onClear:()=>{select(null);cameraTween=null;fitTween=null;fitEnabled=false;}});
 const scrub=document.createElement('label');scrub.className='explosion-scrub';scrub.innerHTML='Explosion Progress <output id=explosion-value>0%</output><input id=explosion-progress aria-label="Explosion Progress" type=range min=0 max=1 step=0.01 value=0>';document.querySelector('.controls').prepend(scrub);$('explosion-progress').oninput=e=>{if(explorer.active)return;sim.setExplosionProgress(Number(e.target.value));sim.paused=true;pauseLabel();frameFit(sim.time>0);};
 const labels=createLabels({parts,camera,canvas,sim,explorer});
+const presentation=createPresentation({sim,explorer,parts});
 document.querySelector('.viewer-note').textContent=parts.length+' INDEPENDENT COMPONENTS · DRAG TO ROTATE · PINCH TO ZOOM';
 let last=performance.now(),diagnosticAt=0,evidence=null;
 function snapshot(){root.updateMatrixWorld(true);camera.updateMatrixWorld(true);const projected=parts.map(p=>{const b=new T.Box3().setFromObject(p),points=[];for(const x of [b.min.x,b.max.x])for(const y of [b.min.y,b.max.y])for(const z of [b.min.z,b.max.z])points.push(new T.Vector3(x,y,z).project(camera));return {id:p.name,minX:Math.min(...points.map(v=>v.x)),maxX:Math.max(...points.map(v=>v.x)),minY:Math.min(...points.map(v=>v.y)),maxY:Math.max(...points.map(v=>v.y)),visible:p.children[0].children.some(m=>m.visible&&m.material.opacity>0)};});return {...metrics,url:location.pathname+location.search,fitEnabled,projected,interactionState:explorer.state||(sim.time===0?'ASSEMBLED':sim.time===DURATION?'EXPLODED':sim.direction<0?'ASSEMBLING':'EXPLODING'),explorer:explorer.snapshot(),animationState:explorer.state||(sim.paused?'PAUSED':sim.time===0?'ALIVE':sim.time===DURATION?'FROZEN':sim.direction<0?'ASSEMBLING':'EXPLODING'),time:sim.time,auto:sim.auto,paused:sim.paused,mechanicalTime:sim.mechanicalTime,drive:sim.drive,camera:camera.position.toArray(),cameraState:{position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),target:controls.target.toArray(),distance:camera.position.distanceTo(controls.target),zoom:camera.zoom,fov:camera.fov,mode:cameraOwner},drawCallsActual:renderer.info.render.calls,trianglesActual:renderer.info.render.triangles,parts:parts.map(p=>({id:p.name,position:p.position.toArray(),rotation:p.rotation.toArray().slice(0,3),home:p.userData.home_position,exploded:p.userData.exploded_position})),motion:moving.map(m=>({id:m.part.name,type:m.type,angle:m.node.rotation.z}))};}
@@ -96,9 +98,9 @@ function frame(now){
  controls.autoRotate=!explorer.active&&(autoRotate||sim.auto)&&cameraOwner!=='USER_CAMERA_OVERRIDE'&&!sim.paused&&!cameraTween&&!userOrbit;controls.autoRotateSpeed=rotation;controls.update(dt);
  if(!explorer.active&&fitEnabled&&cameraOwner==='SYSTEM'&&fitRemaining>0){fitRemaining-=dt;root.updateMatrixWorld(true);fitBounds.makeEmpty();parts.forEach((p,i)=>{partBounds[i].setFromObject(p);fitBounds.union(partBounds[i]);});const center=fitBounds.getCenter(new T.Vector3());controls.target.lerp(center,1-Math.exp(-dt*6));const dir=camera.position.clone().sub(controls.target).normalize();const needed=Math.max(...partBounds.map(b=>fitBox(b,camera,controls.target,dir,{horizontal:mobile()?.82:sim.time>0?.90:.64,vertical:mobile()?.67:.82})));const old=camera.position.distanceTo(controls.target),radius=Math.max(needed,T.MathUtils.lerp(old,needed,1-Math.exp(-dt*5)));camera.position.copy(controls.target).addScaledVector(dir,radius);camera.far=Math.max(150,radius+fitBounds.getSize(new T.Vector3()).length()*2);camera.updateProjectionMatrix();camera.lookAt(controls.target);}
 
- $('explosion-progress').disabled=explorer.active;$('explosion-progress').value=sim.time/DURATION;$('explosion-value').textContent=Math.round(sim.time/DURATION*100)+'%';labels.update();renderer.render(scene,camera);
+ $('explosion-progress').disabled=explorer.active;$('explosion-progress').value=sim.time/DURATION;$('explosion-value').textContent=Math.round(sim.time/DURATION*100)+'%';labels.update();presentation.update();renderer.render(scene,camera);
  if($('pause').getAttribute('aria-pressed')!==String(sim.paused))pauseLabel();
- $('state').textContent=explorer.state|| (sim.paused?'已暫停 · ':'')+sim.stage;$('progress').style.width=(sim.time/DURATION*100)+'%';$('auto').classList.toggle('active',sim.auto);$('explode').classList.toggle('active',sim.time===DURATION);$('assemble').classList.toggle('active',sim.time===0);$('loading').hidden=true;
+ $('progress').style.width=(sim.time/DURATION*100)+'%';$('auto').classList.toggle('active',sim.auto);$('explode').classList.toggle('active',sim.time===DURATION);$('assemble').classList.toggle('active',sim.time===0);$('loading').hidden=true;
  $('motion-state').textContent=sim.paused?'PAUSED':sim.drive>.1?'● MOVEMENT ALIVE':'○ FROZEN STUDY';
  if(now-diagnosticAt>250){diagnosticAt=now;$('diagnostics').textContent=JSON.stringify(snapshot());}
  if(evidence)evidence.frame(dt,snapshot());
